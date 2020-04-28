@@ -112,13 +112,6 @@ classdef  Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot
             end
             P = this.Alpha * P;
         end
-        function Z = Mearsure_model(this, i)
-            x = this.sigma(:, i);
-            C = [1 0 0;
-                 0 1 0;
-                 0 0 1];
-            Z = C * x;
-        end
         function Phi = CalcPhi(this)
             First_content  = (1 / sqrt(2 * pi) * this.Omega^3) * (exp(-(this.zeta(1, 1)^2) / 2 * this.Omega^2));
             Second_content = (1 / sqrt(2 * pi) * this.Omega^3) * (exp(-(this.zeta(2, 1)^2) / 2 * this.Omega^2));

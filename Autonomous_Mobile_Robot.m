@@ -165,6 +165,13 @@ classdef Autonomous_Mobile_Robot
 
             X = A*x + B * this.u;
         end
+        function Z = Mearsure_model(this, i)
+            x = this.sigma(:, i);
+            C = [1 0 0;
+                 0 1 0;
+                 0 0 1];
+            Z = C * x;
+        end
     end
     methods (Access = protected)
         % System Model

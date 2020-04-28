@@ -38,14 +38,14 @@ classdef  QS_Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot
             QS_ARUKF                      = Observation(QS_ARUKF);
             % Prediction Step
             QS_ARUKF.Flag_ganerate_sigma  = 1;
-            QS_ARUKF                = GenerateSigmaPoints(QS_ARUKF, QS_ARUKF.Flag_ganerate_sigma);
-            QS_ARUKF                = PredictMotion(QS_ARUKF);
+            QS_ARUKF                      = GenerateSigmaPoints(QS_ARUKF, QS_ARUKF.Flag_ganerate_sigma);
+            QS_ARUKF                      = PredictMotion(QS_ARUKF);
             QS_ARUKF.xPred                = (QS_ARUKF.wm * QS_ARUKF.sigma')';
             QS_ARUKF.Flag_calculate_sigma = 1;
             QS_ARUKF.PPred                = CalcSimgaPointsCovariance(QS_ARUKF, QS_ARUKF.Flag_calculate_sigma);
             % Filtering Step
             QS_ARUKF.Flag_ganerate_sigma  = 0;
-            QS_ARUKF                = GenerateSigmaPoints(QS_ARUKF, QS_ARUKF.Flag_ganerate_sigma);
+            QS_ARUKF                      = GenerateSigmaPoints(QS_ARUKF, QS_ARUKF.Flag_ganerate_sigma);
             QS_ARUKF.zSigma               = PredictObservation(QS_ARUKF);
             QS_ARUKF.zb                   = (QS_ARUKF.wm * QS_ARUKF.sigma')';
             QS_ARUKF.Pxz                  = CalcPxz(QS_ARUKF);
@@ -110,13 +110,6 @@ classdef  QS_Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot
             for i = 1 : nSigma
                 P = P + this.wc(i) * dx(:, i) * dz(:, i)';
             end
-        end
-        function Z = Mearsure_model(this, i)
-            x = this.sigma(:, i);
-            C = [1 0 0;
-                 0 1 0;
-                 0 0 1];
-            Z = C * x;
         end
         function Phi = CalcPhi(this)
             First_content  = (1 / sqrt(2 * pi) * this.Omega^3) * (exp(-(this.zeta(1, 1)^2) / 2 * this.Omega^2));

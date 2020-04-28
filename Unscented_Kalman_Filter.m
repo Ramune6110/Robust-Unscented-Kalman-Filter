@@ -80,12 +80,5 @@ classdef  Unscented_Kalman_Filter < Autonomous_Mobile_Robot
                 P = P + this.wc(i) * dx(:, i) * dz(:, i)';
             end
         end
-        function Z = Mearsure_model(this, i)
-            x = this.sigma(:, i);
-            C = [1 0 0;
-                 0 1 0;
-                 0 0 1];
-            Z = C * x;
-        end
     end 
 end
