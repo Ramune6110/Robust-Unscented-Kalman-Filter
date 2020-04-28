@@ -1,22 +1,16 @@
 classdef  QS_Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot
+    properties (Access = public)
+        % QS-ARUKF Weight Parameter
+        alpha     = 0.001;       % Design parameter
+        beta      = 2;           % Design parameter
+        kappa     = 0;           % Design parameter
+    end
     properties (Access = private)
-        % QS_ARUKF Parameter
-        alpha = 0.001; % Design parameter
-        beta  = 2;     % Design parameter
-        kappa = 0;     % Design parameter
         Omega = 0.15;   % The kernel width of Correntropy
         rho   = 0.95;  % Lamda for Fading factor
         ita   = 45;
-        Outlier_z = [50; 50; 0.01]; % Measurment Outlier
-        Outlier_x = [5; 5; 0.01]; % System model Outlier
     end
     properties (Access = private)
-        n                    % size of state vector
-        lamda                % Design parameter
-        wm                   % weight wm
-        wc                   % weight wc
-        gamma                % Design parameter
-        sigma                % sigma point system
         zSigma               % sigma point mearsurment
         zb                   % Estimate Measurment value
         St                   % calculate sigma point
@@ -36,23 +30,6 @@ classdef  QS_Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot
         % Initialize
         function QS_Adaptive_Robust_Unscented_Kalman_Filter = QS_Adaptive_Robust_Unscented_Kalman_Filter(xTrue, z, xEst, PEst, Q, R, Qsigma)
             QS_Adaptive_Robust_Unscented_Kalman_Filter@ Autonomous_Mobile_Robot(xTrue, z, xEst, PEst, Q, R, Qsigma);
-            % Setup
-            QS_Adaptive_Robust_Unscented_Kalman_Filter.n     = length(xEst);
-            QS_Adaptive_Robust_Unscented_Kalman_Filter.lamda = QS_Adaptive_Robust_Unscented_Kalman_Filter.alpha^2 * (QS_Adaptive_Robust_Unscented_Kalman_Filter.n + ... 
-                                                            QS_Adaptive_Robust_Unscented_Kalman_Filter.kappa) - QS_Adaptive_Robust_Unscented_Kalman_Filter.n;
-            QS_Adaptive_Robust_Unscented_Kalman_Filter.gamma = sqrt(QS_Adaptive_Robust_Unscented_Kalman_Filter.n + QS_Adaptive_Robust_Unscented_Kalman_Filter.lamda);
-            % Calculate the weight
-            QS_Adaptive_Robust_Unscented_Kalman_Filter.wm    = [QS_Adaptive_Robust_Unscented_Kalman_Filter.lamda / (QS_Adaptive_Robust_Unscented_Kalman_Filter.lamda ...
-                                                             + QS_Adaptive_Robust_Unscented_Kalman_Filter.n)];
-            QS_Adaptive_Robust_Unscented_Kalman_Filter.wc    = [(QS_Adaptive_Robust_Unscented_Kalman_Filter.lamda / (QS_Adaptive_Robust_Unscented_Kalman_Filter.lamda ...
-                                                             + QS_Adaptive_Robust_Unscented_Kalman_Filter.n)) ...
-                                                             + (1 - QS_Adaptive_Robust_Unscented_Kalman_Filter.alpha^2 + QS_Adaptive_Robust_Unscented_Kalman_Filter.beta)];
-            for i = 1 : 2 * QS_Adaptive_Robust_Unscented_Kalman_Filter.n
-                QS_Adaptive_Robust_Unscented_Kalman_Filter.wm = [QS_Adaptive_Robust_Unscented_Kalman_Filter.wm ...
-                                                1 / (2 * (QS_Adaptive_Robust_Unscented_Kalman_Filter.n + QS_Adaptive_Robust_Unscented_Kalman_Filter.lamda))];
-                QS_Adaptive_Robust_Unscented_Kalman_Filter.wc = [QS_Adaptive_Robust_Unscented_Kalman_Filter.wc ...
-                                                1 / (2 * (QS_Adaptive_Robust_Unscented_Kalman_Filter.n + QS_Adaptive_Robust_Unscented_Kalman_Filter.lamda))];
-            end
         end
         function QS_ARUKF = QS_Adaptive_Robust_Unscented_kalman_filter(QS_ARUKF, i)
             % Filtering Setup
@@ -61,14 +38,14 @@ classdef  QS_Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot
             QS_ARUKF                      = Observation(QS_ARUKF);
             % Prediction Step
             QS_ARUKF.Flag_ganerate_sigma  = 1;
-            QS_ARUKF.sigma                = GenerateSigmaPoints(QS_ARUKF, QS_ARUKF.Flag_ganerate_sigma);
-            QS_ARUKF.sigma                = PredictMotion(QS_ARUKF);
+            QS_ARUKF                = GenerateSigmaPoints(QS_ARUKF, QS_ARUKF.Flag_ganerate_sigma);
+            QS_ARUKF                = PredictMotion(QS_ARUKF);
             QS_ARUKF.xPred                = (QS_ARUKF.wm * QS_ARUKF.sigma')';
             QS_ARUKF.Flag_calculate_sigma = 1;
             QS_ARUKF.PPred                = CalcSimgaPointsCovariance(QS_ARUKF, QS_ARUKF.Flag_calculate_sigma);
             % Filtering Step
             QS_ARUKF.Flag_ganerate_sigma  = 0;
-            QS_ARUKF.sigma                = GenerateSigmaPoints(QS_ARUKF, QS_ARUKF.Flag_ganerate_sigma);
+            QS_ARUKF                = GenerateSigmaPoints(QS_ARUKF, QS_ARUKF.Flag_ganerate_sigma);
             QS_ARUKF.zSigma               = PredictObservation(QS_ARUKF);
             QS_ARUKF.zb                   = (QS_ARUKF.wm * QS_ARUKF.sigma')';
             QS_ARUKF.Pxz                  = CalcPxz(QS_ARUKF);
@@ -95,41 +72,6 @@ classdef  QS_Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot
         end 
     end
     methods (Access = protected)
-        function Sigma = GenerateSigmaPoints(this, Flag)
-            if Flag == 1
-                Sigma = this.xEst;
-                [U, S, V] = svd(this.PEst);
-                Psqrt = U * sqrt(S);
-                m     = length(this.xEst);
-                % Positive direction
-                for ip = 1 : m
-                    Sigma = [Sigma this.xEst + this.gamma * Psqrt(:, ip)];
-                end
-                % Negative direction
-                for in = 1 : m
-                    Sigma = [Sigma this.xEst - this.gamma * Psqrt(:, in)];
-                end
-            else
-                Sigma = this.xPred;
-                [U, S, V] = svd(this.PPred);
-                Psqrt = U * sqrt(S);
-                m     = length(this.xPred);
-                % Positive direction
-                for ip = 1 : m
-                    Sigma = [Sigma this.xPred + this.gamma * Psqrt(:, ip)];
-                end
-                % Negative direction
-                for in = 1 : m
-                    Sigma = [Sigma this.xPred - this.gamma * Psqrt(:, in)];
-                end
-            end
-        end
-        function Sigma = PredictMotion(this)
-            % Sigma Points predition with motion model
-            for i = 1 : length(this.sigma(1, :))
-                Sigma(:, i) = Motion_model(this, i);
-            end
-        end
         function P = CalcSimgaPointsCovariance(this, Flag)
             if Flag == 1
                 nSigma = length(this.sigma(1, :));
@@ -169,17 +111,6 @@ classdef  QS_Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot
                 P = P + this.wc(i) * dx(:, i) * dz(:, i)';
             end
         end
-        function X = Motion_model(this, i)
-            x = this.sigma(:, i);
-            A = [1 0 0;
-                 0 1 0;
-                 0 0 1];
-            B = [this.dt * cos(x(3)) 0;
-                 this.dt * sin(x(3)) 0;
-                 0 this.dt];
-
-            X = A*x + B * this.u;
-        end
         function Z = Mearsure_model(this, i)
             x = this.sigma(:, i);
             C = [1 0 0;
@@ -201,20 +132,6 @@ classdef  QS_Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot
                 Lamda_k = Lamda_0;
             elseif Lamda_0 <= 1
                 Lamda_k = 1;
-            end
-        end
-        function this = Outlier(this, flag)
-            if flag == 0
-                if this.time >= 30 && this.time <31
-                    this.z = this.z + this.Outlier_z;
-                end
-            elseif flag == 1
-                if this.time >= 30 && this.time <31
-                    this.z = this.z + this.Outlier_z;
-                end
-                if this.time >= 10 && this.time < 11
-                    this.xPred = this.xPred + this.Outlier_x;
-                end
             end
         end
     end 

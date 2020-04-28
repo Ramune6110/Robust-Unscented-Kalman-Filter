@@ -10,6 +10,7 @@ classdef  Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot
         Lamda = 0.95;  % Lamda for Fading factor
     end
     properties (Access = private)
+        sigma                % sigma point system
         zSigma               % sigma point mearsurment
         zb                   % Estimate Measurment value
         St                   % calculate sigma point
@@ -37,14 +38,14 @@ classdef  Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot
             AMUKF                      = Observation(AMUKF);
             % Prediction Step
             AMUKF.Flag_ganerate_sigma  = 1;
-            AMUKF                = GenerateSigmaPoints(AMUKF, AMUKF.Flag_ganerate_sigma);
-            AMUKF                = PredictMotion(AMUKF);
+            AMUKF.sigma                = GenerateSigmaPoints(AMUKF, AMUKF.Flag_ganerate_sigma);
+            AMUKF.sigma                = PredictMotion(AMUKF);
             AMUKF.xPred                = (AMUKF.wm * AMUKF.sigma')';
             AMUKF.Flag_calculate_sigma = 1;
             AMUKF.PPred                = CalcSimgaPointsCovariance(AMUKF, AMUKF.Flag_calculate_sigma);
             % Filtering Step
             AMUKF.Flag_ganerate_sigma  = 0;
-            AMUKF                = GenerateSigmaPoints(AMUKF, AMUKF.Flag_ganerate_sigma);
+            AMUKF.sigma                = GenerateSigmaPoints(AMUKF, AMUKF.Flag_ganerate_sigma);
             AMUKF.zSigma               = PredictObservation(AMUKF);
             AMUKF.zb                   = (AMUKF.wm * AMUKF.sigma')';
             AMUKF.v                    = AMUKF.z - AMUKF.zb;
@@ -72,6 +73,41 @@ classdef  Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot
         end 
     end
     methods (Access = protected)
+%         function Sigma = GenerateSigmaPoints(this, Flag)
+%             if Flag == 1
+%                 Sigma = this.xEst;
+%                 [U, S, V] = svd(this.PEst);
+%                 Psqrt = U * sqrt(S);
+%                 m     = length(this.xEst);
+%                 % Positive direction
+%                 for ip = 1 : m
+%                     Sigma = [Sigma this.xEst + this.gamma * Psqrt(:, ip)];
+%                 end
+%                 % Negative direction
+%                 for in = 1 : m
+%                     Sigma = [Sigma this.xEst - this.gamma * Psqrt(:, in)];
+%                 end
+%             else
+%                 Sigma = this.xPred;
+%                 [U, S, V] = svd(this.PPred);
+%                 Psqrt = U * sqrt(S);
+%                 m     = length(this.xPred);
+%                 % Positive direction
+%                 for ip = 1 : m
+%                     Sigma = [Sigma this.xPred + this.gamma * Psqrt(:, ip)];
+%                 end
+%                 % Negative direction
+%                 for in = 1 : m
+%                     Sigma = [Sigma this.xPred - this.gamma * Psqrt(:, in)];
+%                 end
+%             end
+%         end
+        function Sigma = PredictMotion(this)
+            % Sigma Points predition with motion model
+            for i = 1 : length(this.sigma(1, :))
+                Sigma(:, i) = Motion_model(this, i);
+            end
+        end
         function P = CalcSimgaPointsCovariance(this, Flag)
             if Flag == 1
                 nSigma = length(this.sigma(1, :));
@@ -111,6 +147,17 @@ classdef  Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot
                 P = P + this.wc(i) * dx(:, i) * dz(:, i)';
             end
             P = this.Alpha * P;
+        end
+        function X = Motion_model(this, i)
+            x = this.sigma(:, i);
+            A = [1 0 0;
+                 0 1 0;
+                 0 0 1];
+            B = [this.dt * cos(x(3)) 0;
+                 this.dt * sin(x(3)) 0;
+                 0 this.dt];
+
+            X = A*x + B * this.u;
         end
         function Z = Mearsure_model(this, i)
             x = this.sigma(:, i);
