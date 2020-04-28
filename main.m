@@ -1,7 +1,7 @@
 % -----------------------------------------------------------------------------
 % File : Robust Unscented Kalman Filter
 %
-% Discription : State Estimation for Autonomous Mobile Robot 
+% Discription : State Estimation for Autonomous Mobile Robot with Outlier
 %
 % Environment : MATLAB_R2019a 
 %

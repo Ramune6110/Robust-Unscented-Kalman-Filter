@@ -9,10 +9,7 @@ classdef  Unscented_Kalman_Filter < Autonomous_Mobile_Robot & Common_Function
         zSigma               % sigma point mearsurment
         zb                   % Estimate Measurment value
         St                   % calculate sigma point
-        Pxz                  % cross covariance matrix
-        Flag_ganerate_sigma  % Switch Prediction  1 or Filtering 0
-        Flag_calculate_sigma % Switch Prediction  1 or Filtering 0
-        Flag_outlier  
+        Pxz                  % cross covariance matrix 
     end
     methods (Access = public)
         % Initialize

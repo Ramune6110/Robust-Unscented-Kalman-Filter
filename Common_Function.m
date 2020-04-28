@@ -1,7 +1,12 @@
 classdef Common_Function
+    properties (Access = protected)
+        Flag_ganerate_sigma  % Switch Prediction  1 or Filtering 0
+        Flag_calculate_sigma % Switch Prediction  1 or Filtering 0
+        Flag_outlier  
+    end
     properties (Access = public)
         % Unscented kalman Filter factor
-        sigma                % sigma point system
+        sigma % sigma point system
     end
     % Unscented Kalman Filter function
     methods (Access = public)

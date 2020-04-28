@@ -7,7 +7,7 @@ classdef  QS_Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot &
     end
     properties (Access = private)
         Omega = 0.15;   % The kernel width of Correntropy
-        rho   = 0.95;  % Lamda for Fading factor
+        rho   = 0.95;   % Lamda for Fading factor
         ita   = 45;
     end
     properties (Access = private)
@@ -17,14 +17,11 @@ classdef  QS_Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot &
         Pxz                  % cross covariance matrix
         Pzz                  % measurment covariance matrix
         v                    % Residual 
-        zeta                 % Residual
+        zeta                 % Article Residual
         phi                  % phi
         Rtilde               % Rtilda
         Lamda                % Lamda
         C_0                  % Fading factor for C
-        Flag_ganerate_sigma  % Switch Prediction  1 or Filtering 0
-        Flag_calculate_sigma % Switch Prediction  1 or Filtering 0 or Pzz 2
-        Flag_outlier
     end
     methods (Access = public)
         % Initialize
@@ -51,14 +48,10 @@ classdef  QS_Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot &
             QS_ARUKF.Pxz                  = CalcPxz(QS_ARUKF);
             QS_ARUKF.v                    = QS_ARUKF.z - QS_ARUKF.zb;
             QS_ARUKF.zeta                 = QS_ARUKF.R^(-1/2) * (QS_ARUKF.z - QS_ARUKF.zb);
-            QS_ARUKF.phi                  = CalcPhi(QS_ARUKF);
+            QS_ARUKF                      = CalcPhi(QS_ARUKF);
             QS_ARUKF.Rtilde               = (QS_ARUKF.R')^(1/2) / QS_ARUKF.phi * (QS_ARUKF.R)^(1/2);
-            if i == 1
-                QS_ARUKF.C_0 = QS_ARUKF.v * QS_ARUKF.v';
-            else
-                QS_ARUKF.C_0 = (QS_ARUKF.rho * QS_ARUKF.C_0 + QS_ARUKF.v * QS_ARUKF.v') / (1 + QS_ARUKF.rho);
-            end
-            QS_ARUKF.Lamda                = CalcLamda(QS_ARUKF);
+            QS_ARUKF                      = CalcC_0(QS_ARUKF, i);
+            QS_ARUKF                      = CalcLamda(QS_ARUKF);
             QS_ARUKF.PPred                = QS_ARUKF.Lamda * QS_ARUKF.PPred;
             QS_ARUKF.Flag_calculate_sigma = 2;
             QS_ARUKF.Pzz                  = CalcSimgaPointsCovariance(QS_ARUKF, QS_ARUKF.Flag_calculate_sigma);
@@ -111,20 +104,27 @@ classdef  QS_Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot &
                 P = P + this.wc(i) * dx(:, i) * dz(:, i)';
             end
         end
-        function Phi = CalcPhi(this)
+        function this = CalcPhi(this)
             First_content  = (1 / sqrt(2 * pi) * this.Omega^3) * (exp(-(this.zeta(1, 1)^2) / 2 * this.Omega^2));
             Second_content = (1 / sqrt(2 * pi) * this.Omega^3) * (exp(-(this.zeta(2, 1)^2) / 2 * this.Omega^2));
             Third_content  = (1 / sqrt(2 * pi) * this.Omega^3) * (exp(-(this.zeta(3, 1)^2) / 2 * this.Omega^2));
-            Phi = diag([First_content Second_content Third_content]);
+            this.phi       = diag([First_content Second_content Third_content]);
         end
-        function Lamda_k = CalcLamda(this)
+        function this = CalcC_0(this, i)
+            if i == 1
+                this.C_0 = this.v * this.v';
+            else
+                this.C_0 = (this.Lamda * this.C_0 + this.v * this.v') / (1 + this.Lamda);
+            end
+        end
+        function this = CalcLamda(this)
             H = eye(3);
-            Lamda_0 = trace(this.C_0 - this.ita * this.R - H * this.Q * H') / trace(H * (this.PPred - this.Q) * H');
+            this.Lamda = trace(this.C_0 - this.ita * this.R - H * this.Q * H') / trace(H * (this.PPred - this.Q) * H');
             
-            if Lamda_0 > 1
-                Lamda_k = Lamda_0;
-            elseif Lamda_0 <= 1
-                Lamda_k = 1;
+            if this.Lamda > 1
+                this.Lamda = this.Lamda;
+            elseif this.Lamda <= 1
+                this.Lamda = 1;
             end
         end
     end 

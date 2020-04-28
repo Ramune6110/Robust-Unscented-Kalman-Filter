@@ -6,8 +6,8 @@ classdef  Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot & Co
         kappa = 0;           % Design parameter
     end
     properties (Access = private)
-        Omega = 0.15;  % The kernel width of Correntropy
-        rho   = 0.95;  % rho for Fading factor
+        Omega = 0.15;   % The kernel width of Correntropy
+        Lamda = 0.95;  % Lamda for Fading factor
     end
     properties (Access = private)
         zSigma               % sigma point mearsurment
@@ -16,7 +16,7 @@ classdef  Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot & Co
         Pxz                  % cross covariance matrix
         Pzz                  % measurment covariance matrix
         v                    % Residual 
-        zeta                 % Article Residual
+        zeta                 % Residual
         phi                  % phi
         Rtilde               % Rtilda
         Alpha                % Alpha
@@ -46,12 +46,17 @@ classdef  Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot & Co
             AMUKF.zb                   = (AMUKF.wm * AMUKF.sigma')';
             AMUKF.v                    = AMUKF.z - AMUKF.zb;
             AMUKF.zeta                 = AMUKF.R^(-1/2) * (AMUKF.zb - AMUKF.z);
-            AMUKF                      = CalcPhi(AMUKF);
+            AMUKF.phi                  = CalcPhi(AMUKF);
             AMUKF.Rtilde               = (AMUKF.R')^(1/2) / AMUKF.phi * (AMUKF.R)^(1/2);
             AMUKF.Flag_calculate_sigma = 0;
             AMUKF.St                   = CalcSimgaPointsCovariance(AMUKF, AMUKF.Flag_calculate_sigma);
-            AMUKF                      = CalcC_0(AMUKF, i);
-            AMUKF                      = CalcAlpha(AMUKF);
+            AMUKF.C_0                  = CalcC_0(AMUKF, i);
+%             if i == 1
+%                 AMUKF.C_0 = AMUKF.v * AMUKF.v';
+%             else
+%                 AMUKF.C_0 = (AMUKF.Lamda * AMUKF.C_0 + AMUKF.v * AMUKF.v') / (1 + AMUKF.Lamda);
+%             end
+            AMUKF.Alpha                = CalcAlpha(AMUKF);
             AMUKF.PPred                = AMUKF.Alpha * AMUKF.PPred;
             AMUKF.Flag_calculate_sigma = 2;
             AMUKF.Pzz                  = CalcSimgaPointsCovariance(AMUKF, AMUKF.Flag_calculate_sigma);
@@ -105,26 +110,26 @@ classdef  Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot & Co
             end
             P = this.Alpha * P;
         end
-        function this = CalcPhi(this)
+        function Phi = CalcPhi(this)
             First_content  = (1 / sqrt(2 * pi) * this.Omega^3) * (exp(-(this.zeta(1, 1)^2) / 2 * this.Omega^2));
             Second_content = (1 / sqrt(2 * pi) * this.Omega^3) * (exp(-(this.zeta(2, 1)^2) / 2 * this.Omega^2));
             Third_content  = (1 / sqrt(2 * pi) * this.Omega^3) * (exp(-(this.zeta(3, 1)^2) / 2 * this.Omega^2));
-            this.phi       = diag([First_content Second_content Third_content]);
+            Phi = diag([First_content Second_content Third_content]);
         end
         function this = CalcC_0(this, i)
             if i == 1
                 this.C_0 = this.v * this.v';
             else
-                this.C_0 = (this.rho * this.C_0 + this.v * this.v') / (1 + this.rho);
+                c_0 = (this.Lamda * this.c_0 + this.v * this.v') / (1 + this.Lamda);
             end
         end
-        function this = CalcAlpha(this)
-            this.Alpha = trace(this.C_0 - this.R) / trace(this.St - this.R);
+        function alpha_k = CalcAlpha(this)
+            alpha_0 = trace(this.C_0 - this.R) / trace(this.St - this.R);
             
-            if this.Alpha > 1
-                this.Alpha = this.Alpha;
-            elseif this.Alpha <= 1
-                this.Alpha = 1;
+            if alpha_0 > 1
+                alpha_k = alpha_0;
+            elseif alpha_0 <= 1
+                alpha_k = 1;
             end
         end
     end 
