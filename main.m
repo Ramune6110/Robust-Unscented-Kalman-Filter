@@ -1,13 +1,13 @@
 % -----------------------------------------------------------------------------
-% File : Extended_Kalman_Filter and Unscented_Kalman_Filter
+% File : Robust Unscented Kalman Filter
 %
-% Discription : State Estimation for Autonomous Mobile Robot with EKF and UKF
+% Discription : State Estimation for Autonomous Mobile Robot 
 %
 % Environment : MATLAB_R2019a 
 %
-% Author : Keigo Miyama
+% Author : Ramune6110
 %
-% Copyright (c): 2020 Keigo Miyama
+% Copyright (c): 2020 Ramune6110
 % -----------------------------------------------------------------------------
 clear;
 close all;
