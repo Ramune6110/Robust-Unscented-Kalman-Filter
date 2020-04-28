@@ -1,9 +1,9 @@
-classdef  QS_Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot
+classdef  QS_Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot & Common_Function
     properties (Access = public)
         % QS-ARUKF Weight Parameter
-        alpha     = 0.001;       % Design parameter
-        beta      = 2;           % Design parameter
-        kappa     = 0;           % Design parameter
+        alpha = 0.001;       % Design parameter
+        beta  = 2;           % Design parameter
+        kappa = 0;           % Design parameter
     end
     properties (Access = private)
         Omega = 0.15;   % The kernel width of Correntropy

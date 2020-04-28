@@ -1,9 +1,9 @@
-classdef  Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot
+classdef  Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot & Common_Function
     properties (Access = public)
         % ARUKF Weight Parameter
-        alpha     = 0.001;       % Design parameter
-        beta      = 2;           % Design parameter
-        kappa     = 0;           % Design parameter
+        alpha = 0.001;       % Design parameter
+        beta  = 2;           % Design parameter
+        kappa = 0;           % Design parameter
     end
     properties (Access = private)
         Omega = 0.15;   % The kernel width of Correntropy
@@ -37,14 +37,14 @@ classdef  Adaptive_Robust_Unscented_Kalman_Filter < Autonomous_Mobile_Robot
             AMUKF                      = Observation(AMUKF);
             % Prediction Step
             AMUKF.Flag_ganerate_sigma  = 1;
-            AMUKF                = GenerateSigmaPoints(AMUKF, AMUKF.Flag_ganerate_sigma);
-            AMUKF                = PredictMotion(AMUKF);
+            AMUKF                      = GenerateSigmaPoints(AMUKF, AMUKF.Flag_ganerate_sigma);
+            AMUKF                      = PredictMotion(AMUKF);
             AMUKF.xPred                = (AMUKF.wm * AMUKF.sigma')';
             AMUKF.Flag_calculate_sigma = 1;
             AMUKF.PPred                = CalcSimgaPointsCovariance(AMUKF, AMUKF.Flag_calculate_sigma);
             % Filtering Step
             AMUKF.Flag_ganerate_sigma  = 0;
-            AMUKF                = GenerateSigmaPoints(AMUKF, AMUKF.Flag_ganerate_sigma);
+            AMUKF                      = GenerateSigmaPoints(AMUKF, AMUKF.Flag_ganerate_sigma);
             AMUKF.zSigma               = PredictObservation(AMUKF);
             AMUKF.zb                   = (AMUKF.wm * AMUKF.sigma')';
             AMUKF.v                    = AMUKF.z - AMUKF.zb;
